@@ -29,7 +29,13 @@ udp_socket.setMulticastLoopback ( true);
 udp_socket.on('message',function( msg, rinfo ) {
 // convert msg to string, hack-style!
 var s = JSON.parse(msg.toString());
-console.log(s);
+//console.log(s);
+wss.clients.forEach(function each(client) {
+if (client.readyState === WebSocket.OPEN) {
+ client.send(JSON.stringify(s));
+ console.log("web_socket send done");
+}
+});
 });
 
 
