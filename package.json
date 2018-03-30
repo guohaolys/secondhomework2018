@@ -1,0 +1,15 @@
+{
+  "name": "exampple",
+  "version": "1.0.0",
+  "description": "just for learning the express",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "guohao",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.15.2",
+    "ws": "^2.2.2"
+  }
+}
