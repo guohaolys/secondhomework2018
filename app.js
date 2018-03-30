@@ -1,5 +1,9 @@
 //	required node modules
 var dgram = require('dgram');
+const WebSocket = require('ws');
+
+const wss = new WebSocket.Server({ port: 3030 });
+
 // 	udp socket connection
 var udp_socket;
 // 	connection parameters for multicast (UDP)
@@ -26,4 +30,14 @@ udp_socket.on('message',function( msg, rinfo ) {
 // convert msg to string, hack-style!
 var s = JSON.parse(msg.toString());
 console.log(s);
+});
+
+
+wss.on('connection', function ( wsocket ) {
+  console.log("*** 3030 Browser Client Connect");
+  web_socket = wsocket;
+  web_socket.once('close',function() {
+    console.log('remote socket BROWSER 3030 closed');
+    web_socket = null;
+  });
 });

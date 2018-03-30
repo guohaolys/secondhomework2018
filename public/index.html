@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Tahoma, Geneva, sans-serif;
+      }
+      div {
+        display: inline;
+      }
+    </style>
+    <script>
+      var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
+      ws.onopen = function()
+              {
+                 alert("open WebSocket on server");
+              };
+
+      ws.onmessage = function (evt)
+              {
+                 var received_msg = evt.data;
+                 alert("Message is received...");
+              };
+
+      ws.onclose = function()
+              {
+                 // websocket is closed.
+                 alert("Connection is closed...");
+              };
+    </script>
+  </head>
+  <body>
+
+  </body>
+</html>
