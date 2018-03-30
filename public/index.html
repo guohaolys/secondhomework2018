@@ -10,6 +10,10 @@
       }
     </style>
     <script>
+    function updateStats(memuse) {
+      document.getElementById('rss').innerHTML += memuse["header"]["seq"];
+      document.getElementById('heapTotal').innerHTML += memuse["header"]["frame_id"];
+    }
       var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
       ws.onopen = function()
               {
@@ -18,8 +22,7 @@
 
       ws.onmessage = function (evt)
               {
-                 var received_msg = evt.data;
-                 alert("Message is received...");
+               updateStats(JSON.parse(evt.data));
               };
 
       ws.onclose = function()
@@ -30,6 +33,8 @@
     </script>
   </head>
   <body>
-
+    <strong>Server Stats</strong><br>
+    header: <div id='rss'></div><br>
+    tracks: <div id='heapTotal'></div><br>
   </body>
 </html>
