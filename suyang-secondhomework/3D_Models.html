@@ -13,75 +13,137 @@
         if(typeof require === "function") {
             require.config({
                 baseUrl : 'Cesium/Source',
-                waitSeconds : 120
+                waitSeconds : 60
             });
         }
     </script>
 </head>
-<body class="sandcastle-loading" >
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html">
 <style>
      @import url(Cesium/Apps/Sandcastle/templates/bucket.css);
 </style>
 <div id="cesiumContainer" class="fullSize"></div>
 <div id="loadingOverlay"><h1>Loading...</h1></div>
 
-<script id="cesium_sandcastle_script">
+<script id="cesium_sandcastle_script" data-sandcastle-bucket="bucket-requirejs.html">
 function startup(Cesium) {
     'use strict';
+
 //Sandcastle_Begin
 var viewer = new Cesium.Viewer('cesiumContainer', {
-    infoBox : false,
-    selectionIndicator : false,
-    shadows : true,
-    shouldAnimate : true
+    infoBox: false, //Disable InfoBox widget
+    selectionIndicator: false, //Disable selection indicator
+    shouldAnimate: true, // Enable animations
+    terrainProvider: Cesium.createWorldTerrain()
 });
 
-function createModel(url, height) {
-    viewer.entities.removeAll();
+//Enable lighting based on sun/moon positions
+viewer.scene.globe.enableLighting = true;
 
-    var position = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706, height);
-    var heading = Cesium.Math.toRadians(135);
-    var pitch = 0;
-    var roll = 0;
-    var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
-    var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+//Enable depth testing so things behind the terrain disappear.
+viewer.scene.globe.depthTestAgainstTerrain = true;
 
-    var entity = viewer.entities.add({
-        name : url,
-        position : position,
-        orientation : orientation,
-        model : {
-            uri : url,
-            minimumPixelSize : 128,
-            maximumScale : 20000
-        }
-    });
-    viewer.trackedEntity = entity;
+//Set bounds of our simulation time
+var start = Cesium.JulianDate.fromDate(new Date(2015, 2, 25, 16));
+var stop = Cesium.JulianDate.addSeconds(start, 360, new Cesium.JulianDate());
+
+//Make sure viewer is at the desired time.
+viewer.clock.startTime = start.clone();
+viewer.clock.stopTime = stop.clone();
+viewer.clock.currentTime = start.clone();
+viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+viewer.clock.multiplier = 10;
+
+//Set timeline to simulation bounds
+viewer.timeline.zoomTo(start, stop);
+
+//Generate a random circular pattern with varying heights.
+function computeCirclularFlight(obj) {
+    var property = new Cesium.SampledPositionProperty();
+    var j=0;
+    for (var i = 0; i <= 360; i += 45 ) {
+        //var radians = Cesium.Math.toRadians(i);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position = Cesium.Cartesian3.fromDegrees(obj[j].longitude, obj[j].latitude, obj[j].height);
+		//var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+        property.addSample(time, position);
+
+        //Also create a point for each sample we generate.
+        viewer.entities.add({
+            position : position,
+            point : {
+                pixelSize : 8,
+                color : Cesium.Color.TRANSPARENT,
+                outlineColor : Cesium.Color.YELLOW,
+                outlineWidth : 3
+            }
+        });
+		j++;
+    }
+  	//Actually create the entity
+var entity = viewer.entities.add({
+
+    //Set the entity availability to the same interval as the simulation time.
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : property,
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(property),
+
+    //Load the Cesium plane model to represent the entity
+    model : {
+        uri : 'Cesium/Apps/SampleData/models/CesiumAir/Cesium_Air.glb',
+        minimumPixelSize : 64
+    },
+
+    //Show the path as a pink line sampled in 1 second increments.
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.BLUE
+        }),
+        width : 10
+    }
+});
+viewer.trackedEntity = undefined;
+viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90)));
+
+	
 }
 
+var i=0;
+function updateStats(memuse) {
+    if(i==0)
+    {
+	   computeCirclularFlight(memuse);
+	   alert("This is 0");
+	  //console.log("This" + memuse + " to the wire...");
+	}
+	i++;
+}
+var ws = new WebSocket('ws://' + '127.0.0.1' + ':3000');
+ws.onopen = function(){
+    alert("open WebSocket on server+1");
+};
 
- //createModel('Cesium/Apps/SampleData/models/CesiumAir/Cesium_Air.glb', 5000.0);
-//Sandcastle_End
-   function updateStats(memuse) {
-		     var h=parseInt(memuse["height"]);
-             createModel(memuse["url"],h);
-         }
-         var ws = new WebSocket('ws://' + '127.0.0.1' + ':3000');
-         ws.onopen = function()
-              {
-                 alert("open WebSocket on server");
-              };
+ws.onmessage = function (evt){
+    updateStats(JSON.parse(evt.data));
+};
 
-         ws.onmessage = function (evt)
-              {
-               updateStats(JSON.parse(evt.data));
-              };
+ws.onclose = function(){
+    // websocket is closed.
+    alert("Connection is closed...");
+};
 
-         ws.onclose = function()
-              {
-                 // websocket is closed.
-                 alert("Connection is closed...");
-              };
+	 //Sandcastle_End
+    Sandcastle.finishedLoading(); 
+
 }
 if (typeof Cesium !== "undefined") {
     startup(Cesium);
