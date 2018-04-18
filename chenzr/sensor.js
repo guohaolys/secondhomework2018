@@ -2,7 +2,7 @@ const dgram = require('dgram');
 
 setInterval(broadcastNew, 1000);
 function broadcastNew() {
-  var obj = {"header":{"seq":71251,"stamp":{"sec":1415305737,"nsec":110138944},"frame_id":"world"},"tracks": [{"id":387,"x":-0.89131,"y":2.41851,"height":1.55837,"age":29.471,"confidence":.0500193}]};
+  var obj = {"guangdong":{"id":1,"name1":"guangdong","population":104320459}};
   //replace obj with your own sensor data
   /*such as some mathematical curve*/
   var myJSON = JSON.stringify(obj);

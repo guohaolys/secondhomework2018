@@ -28,13 +28,21 @@ function startup(Cesium) {
     'use strict';
 //Sandcastle_Begin
 var viewer = new Cesium.Viewer('cesiumContainer');
+alert("2");  //用于调试，标记版本
+viewer.dataSources.removeAll();
 
-//Example 3: Apply custom graphics after load.
-Sandcastle.addToolbarButton('Custom styling', function() {
+//把相机视角切换到北京上空
+viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+
+//province函数：利用json文件，根据各省人口数量（决定高低）绘制立体多边形
+function province(path1,population1) {
     //Seed the random number generator for repeatable results.
     Cesium.Math.setRandomNumberSeed(0);
+	path1+='.json';  //连接字符串形成正确路径
+	var pop = population1 - 0;  //把字符串变为数字
 
-    var promise = Cesium.GeoJsonDataSource.load('province/guangdong.json');
+    var promise = Cesium.GeoJsonDataSource.load(path1);
     promise.then(function(dataSource) {
         viewer.dataSources.add(dataSource);
 
@@ -62,22 +70,35 @@ Sandcastle.addToolbarButton('Custom styling', function() {
             //Extrude the polygon based on the state's population.  Each entity
             //stores the properties for the GeoJSON feature it was created from
             //Since the population is a huge number, we divide by 50.
-            entity.polygon.extrudedHeight = 60000000 / 50.0;
+            entity.polygon.extrudedHeight = pop / 100.0;
         }
     }).otherwise(function(error){
         //Display any errrors encountered while loading.
         window.alert(error);
     });
-});
+}
 
-//Reset the scene when switching demos.
-Sandcastle.reset = function() {
-    viewer.dataSources.removeAll();
+function updateStats(memuse) {
+	var path = "province/";
+	path+=memuse["guangdong"]["name1"]; 
+	var population = memuse["guangdong"]["population"];
+	province(path,population);
+}
 
-    //Set the camera to a US centered tilted view and switch back to moving in world coordinates.
-    viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
-    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
+ws.onmessage = function (evt)
+{
+    updateStats(JSON.parse(evt.data));
 };
+
+ws.onclose = function()
+{
+	// websocket is closed.
+	alert("Connection is closed...");
+};
+
+//    viewer.dataSources.removeAll();
+
 //Sandcastle_End
     Sandcastle.finishedLoading();
 }
