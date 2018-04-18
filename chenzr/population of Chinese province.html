@@ -28,7 +28,7 @@ function startup(Cesium) {
     'use strict';
 //Sandcastle_Begin
 var viewer = new Cesium.Viewer('cesiumContainer');
-alert("12");  //用于调试，标记版本
+alert("13");  //用于调试，标记版本
 viewer.dataSources.removeAll();
 var count=0;
 
@@ -37,12 +37,12 @@ viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cart
 viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 
 //province函数：利用json文件，根据各省人口数量（决定高低）绘制立体多边形
-function province(path1,population1) {
+function province(path1,population1,id1) {
     //Seed the random number generator for repeatable results.
     Cesium.Math.setRandomNumberSeed(4);
 	path1+='.json';  //连接字符串形成正确路径
 	var pop = population1 - 0;  //把字符串变为数字
-	
+	var id2=id1 -0;
 
     var promise = Cesium.GeoJsonDataSource.load(path1);
     promise.then(function(dataSource) {
@@ -51,23 +51,20 @@ function province(path1,population1) {
         //Get the array of entities
         var entities = dataSource.entities.values;
 
-       // var colorHash = {};
 		var color = Cesium.Color.fromRandom({
                     alpha : 1.0,
+					red: id2/32,
+					//green: id2/35,
+					blue: id2/38
                 });
-		//alert(color);
         for (var i = 0; i < entities.length; i++) {
             var entity = entities[i];
-           // var name = entity.name;
-           // colorHash[name] = color;
 
             //Set the polygon material to our random color.
             entity.polygon.material = color;
             //Remove the outlines.
             entity.polygon.outline = true;
 
-            //Extrude the polygon based on the state's population.  Each entity
-            //stores the properties for the GeoJSON feature it was created from
             //Since the population is a huge number, we divide by 50.
             entity.polygon.extrudedHeight = pop / 50.0;
         }
@@ -81,27 +78,31 @@ function updateStats(memuse) {
 	var path = "province/";
 	path+=memuse.province.name1;; 
 	var population = memuse.province.population;
-	province(path,population);
+	var id = memuse.province.id;
+	province(path,population,id);
 	count++;
-	//if(id==2)
-	//{viewer.dataSources.removeAll();}
+	if(id==31)
+	{
+	viewer.dataSources.removeAll();
+	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+	}
 }
 
 var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
 ws.onopen = function()
-{
-    alert("open WebSocket on server");
-};
+              {
+                 alert("open WebSocket on server");
+              };
 ws.onmessage = function (evt)
 {
     updateStats(JSON.parse(evt.data));
-	if (count==31){
-	//alert("再次循环！"); 
-	count=0;
-	viewer.dataSources.removeAll();
-    viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
-    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-	}
+	//if (count==31){
+	//count=0;
+	//viewer.dataSources.removeAll();
+    //viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+    //viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+	//}
 };
 
 ws.onclose = function()
