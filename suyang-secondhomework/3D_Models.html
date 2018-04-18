@@ -24,7 +24,9 @@
 </style>
 <div id="cesiumContainer" class="fullSize"></div>
 <div id="loadingOverlay"><h1>Loading...</h1></div>
-
+<div id="toolbar">
+    <div id="interpolationMenu"></div>
+</div>
 <script id="cesium_sandcastle_script" data-sandcastle-bucket="bucket-requirejs.html">
 function startup(Cesium) {
     'use strict';
@@ -111,9 +113,49 @@ var entity = viewer.entities.add({
         width : 10
     }
 });
-viewer.trackedEntity = undefined;
-viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90)));
+//Add button to view the path from the top down
+Sandcastle.addDefaultToolbarButton('View Top Down', function() {
+    viewer.trackedEntity = undefined;
+    viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90)));
+});
 
+//Add button to view the path from the side
+Sandcastle.addToolbarButton('View Side', function() {
+    viewer.trackedEntity = undefined;
+    viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(Cesium.Math.toRadians(-90), Cesium.Math.toRadians(-15), 7500));
+});
+
+//Add button to track the entity as it moves
+Sandcastle.addToolbarButton('View Aircraft', function() {
+    viewer.trackedEntity = entity;
+});
+
+//Add a combo box for selecting each interpolation mode.
+Sandcastle.addToolbarMenu([{
+    text : 'Interpolation: Linear Approximation',
+    onselect : function() {
+        entity.position.setInterpolationOptions({
+            interpolationDegree : 1,
+            interpolationAlgorithm : Cesium.LinearApproximation
+        });
+    }
+}, {
+    text : 'Interpolation: Lagrange Polynomial Approximation',
+    onselect : function() {
+        entity.position.setInterpolationOptions({
+            interpolationDegree : 5,
+            interpolationAlgorithm : Cesium.LagrangePolynomialApproximation
+        });
+    }
+}, {
+    text : 'Interpolation: Hermite Polynomial Approximation',
+    onselect : function() {
+        entity.position.setInterpolationOptions({
+            interpolationDegree : 2,
+            interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+        });
+    }
+}], 'interpolationMenu');
 	
 }
 

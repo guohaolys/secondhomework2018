@@ -3,8 +3,8 @@ const dgram = require('dgram');
 setInterval(broadcastNew, 5000);
 function broadcastNew() {
   //replace obj with your own sensor data
-  var lon=[-112.110693];
-  var lat=[36.0994841];
+  var lon=[116.363621];
+  var lat=[40.010789];
   var radius=0.03;
   var toRadians=Math.PI/180.0;
   var h=[];
