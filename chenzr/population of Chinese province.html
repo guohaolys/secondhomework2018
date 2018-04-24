@@ -26,12 +26,26 @@
 <script id="cesium_sandcastle_script">
 function startup(Cesium) {
     'use strict';
+	
+//地球自转
+var clock = new Cesium.Clock({
+   startTime : Cesium.JulianDate.fromIso8601("2018-04-24"),
+   currentTime : Cesium.JulianDate.fromIso8601("2018-04-24"),
+   stopTime : Cesium.JulianDate.fromIso8601("2018-04-25"),
+   clockRange : Cesium.ClockRange.LOOP_STOP, // loop when we hit the end time
+   clockStep : Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER,
+   multiplier : 4000, // how much time to advance each tick
+   shouldAnimate : true // Animation on by default
+});
+
 //Sandcastle_Begin
 var viewer = new Cesium.Viewer('cesiumContainer', {
-    sceneModePicker:false
+    sceneModePicker:false,
+	 clockViewModel : new Cesium.ClockViewModel(clock)
 });
 var scene = viewer.scene;
 var skyAtmosphere = scene.skyAtmosphere;
+viewer.scene.globe.enableLighting = true;
 
 //清除图形
 Sandcastle.addToolbarButton('Clear', function() {
@@ -50,20 +64,7 @@ var viewModel = {
 // Convert the viewModel members into knockout observables.
 Cesium.knockout.track(viewModel);
 
-// Make the skyAtmosphere's HSB parameters subscribers of the viewModel.
-function subscribeParameter(name) {
-    Cesium.knockout.getObservable(viewModel, name).subscribe(
-        function(newValue) {
-            skyAtmosphere[name] = newValue;
-        }
-    );
-}
-
-//subscribeParameter('hueShift');
-//subscribeParameter('saturationShift');
-//subscribeParameter('brightnessShift');
-
-alert("14");  //用于调试，标记版本
+alert("18");  //用于调试，标记版本
 viewer.dataSources.removeAll();
 var count=0;
 
@@ -89,7 +90,6 @@ function province(path1,population1,id1) {
 		var color = Cesium.Color.fromRandom({
                     alpha : 1.0,
 					red: id2/32,
-					//green: id2/35,
 					blue: id2/38
                 });
         for (var i = 0; i < entities.length; i++) {
@@ -115,6 +115,7 @@ function updateStats(memuse) {
 	var population = memuse.province.population;
 	var id = memuse.province.id;
 	skyAtmosphere.hueShift += id/150;
+	viewer.clockViewModel.multiplier+= id*50;
 	province(path,population,id);
 	count++;
 	if(id==31)
@@ -122,6 +123,7 @@ function updateStats(memuse) {
 	viewer.dataSources.removeAll();
 	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
     viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+	viewer.clockViewModel.multiplier = 4000;
 	}
 }
 
@@ -133,12 +135,6 @@ ws.onopen = function()
 ws.onmessage = function (evt)
 {
     updateStats(JSON.parse(evt.data));
-	//if (count==31){
-	//count=0;
-	//viewer.dataSources.removeAll();
-    //viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
-    //viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-	//}
 };
 
 ws.onclose = function()
@@ -147,7 +143,6 @@ ws.onclose = function()
 	alert("Connection is closed...");
 };
 
-//    viewer.dataSources.removeAll();
 
 //Sandcastle_End
     Sandcastle.finishedLoading();
