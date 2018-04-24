@@ -27,13 +27,48 @@
 function startup(Cesium) {
     'use strict';
 //Sandcastle_Begin
-var viewer = new Cesium.Viewer('cesiumContainer');
-alert("13");  //用于调试，标记版本
+var viewer = new Cesium.Viewer('cesiumContainer', {
+    sceneModePicker:false
+});
+var scene = viewer.scene;
+var skyAtmosphere = scene.skyAtmosphere;
+
+//清除图形
+Sandcastle.addToolbarButton('Clear', function() {
+	viewer.dataSources.removeAll();
+	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+});
+
+
+// The viewModel tracks the state of our mini application.
+var viewModel = {
+    hueShift: 0.02,
+    saturationShift: 0.0,
+    brightnessShift: 0.0
+};
+// Convert the viewModel members into knockout observables.
+Cesium.knockout.track(viewModel);
+
+// Make the skyAtmosphere's HSB parameters subscribers of the viewModel.
+function subscribeParameter(name) {
+    Cesium.knockout.getObservable(viewModel, name).subscribe(
+        function(newValue) {
+            skyAtmosphere[name] = newValue;
+        }
+    );
+}
+
+//subscribeParameter('hueShift');
+//subscribeParameter('saturationShift');
+//subscribeParameter('brightnessShift');
+
+alert("14");  //用于调试，标记版本
 viewer.dataSources.removeAll();
 var count=0;
 
 //把相机视角切换到北京上空
-viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(104.4, 28.7), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
 viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 
 //province函数：利用json文件，根据各省人口数量（决定高低）绘制立体多边形
@@ -79,6 +114,7 @@ function updateStats(memuse) {
 	path+=memuse.province.name1;; 
 	var population = memuse.province.population;
 	var id = memuse.province.id;
+	skyAtmosphere.hueShift += id/150;
 	province(path,population,id);
 	count++;
 	if(id==31)
