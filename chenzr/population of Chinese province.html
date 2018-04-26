@@ -55,7 +55,7 @@ Sandcastle.addToolbarButton('Clear', function() {
 });
 
 
-// The viewModel tracks the state of our mini application.
+// 大气颜色
 var viewModel = {
     hueShift: 0.02,
     saturationShift: 0.0,
@@ -95,14 +95,27 @@ function province(path1,population1,id1) {
         for (var i = 0; i < entities.length; i++) {
             var entity = entities[i];
 
-            //Set the polygon material to our random color.
+            //设置颜色
             entity.polygon.material = color;
-            //Remove the outlines.
+            //设置轮廓线
             entity.polygon.outline = true;
-
-            //Since the population is a huge number, we divide by 50.
+            //高度通过人口数据设置，人口过大，除以50
             entity.polygon.extrudedHeight = pop / 50.0;
         }
+		viewer.render();
+		
+		/*dataSource.loadingEvent.addEventListener(function() {
+		if(id2==31)
+		{
+		viewer.dataSources.removeAll();
+		viewer.render();
+		viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+		viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+		viewer.clockViewModel.multiplier = 4000;
+		}
+		});
+		dataSource.loadingEvent.raiseEvent('1', '2');*/
+		
     }).otherwise(function(error){
         //Display any errrors encountered while loading.
         window.alert(error);
@@ -117,21 +130,21 @@ function updateStats(memuse) {
 	skyAtmosphere.hueShift += id/150;
 	viewer.clockViewModel.multiplier+= id*50;
 	province(path,population,id);
-	count++;
-	if(id==31)
+	if(id == 31)
 	{
 	viewer.dataSources.removeAll();
+	viewer.render();
 	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
-    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+	viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 	viewer.clockViewModel.multiplier = 4000;
 	}
 }
 
 var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
 ws.onopen = function()
-              {
-                 alert("open WebSocket on server");
-              };
+{
+    alert("open WebSocket on server");
+};
 ws.onmessage = function (evt)
 {
     updateStats(JSON.parse(evt.data));
