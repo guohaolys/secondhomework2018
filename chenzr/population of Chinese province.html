@@ -26,7 +26,7 @@
 <script id="cesium_sandcastle_script">
 function startup(Cesium) {
     'use strict';
-	
+
 //地球自转
 var clock = new Cesium.Clock({
    startTime : Cesium.JulianDate.fromIso8601("2018-04-24"),
@@ -47,14 +47,6 @@ var scene = viewer.scene;
 var skyAtmosphere = scene.skyAtmosphere;
 viewer.scene.globe.enableLighting = true;
 
-//清除图形
-Sandcastle.addToolbarButton('Clear', function() {
-	viewer.dataSources.removeAll();
-	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
-    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-});
-
-
 // 大气颜色
 var viewModel = {
     hueShift: 0.02,
@@ -62,13 +54,18 @@ var viewModel = {
     brightnessShift: 0.0
 };
 // Convert the viewModel members into knockout observables.
-Cesium.knockout.track(viewModel);
+Cesium.knockout.track(viewModel);  //监控：自动更新
 
-alert("18");  //用于调试，标记版本
+//清除图形
+Sandcastle.addToolbarButton('Clear', function() {
+	viewer.dataSources.removeAll();
+	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(104.4, 28.7), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+});
+
 viewer.dataSources.removeAll();
-var count=0;
 
-//把相机视角切换到北京上空
+//把相机视角切换到中国上空
 viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(104.4, 28.7), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
 viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 
@@ -77,8 +74,6 @@ function province(path1,population1,id1) {
     //Seed the random number generator for repeatable results.
     Cesium.Math.setRandomNumberSeed(4);
 	path1+='.json';  //连接字符串形成正确路径
-	var pop = population1 - 0;  //把字符串变为数字
-	var id2=id1 -0;
 
     var promise = Cesium.GeoJsonDataSource.load(path1);
     promise.then(function(dataSource) {
@@ -89,8 +84,8 @@ function province(path1,population1,id1) {
 
 		var color = Cesium.Color.fromRandom({
                     alpha : 1.0,
-					red: id2/32,
-					blue: id2/38
+					red: id1/32,
+					blue: id1/38
                 });
         for (var i = 0; i < entities.length; i++) {
             var entity = entities[i];
@@ -100,21 +95,23 @@ function province(path1,population1,id1) {
             //设置轮廓线
             entity.polygon.outline = true;
             //高度通过人口数据设置，人口过大，除以50
-            entity.polygon.extrudedHeight = pop / 50.0;
+            entity.polygon.extrudedHeight = population1 / 50.0;
         }
 		viewer.render();
 		
-		/*dataSource.loadingEvent.addEventListener(function() {
-		if(id2==31)
+		dataSource.loadingEvent.addEventListener(function() {
+		if(id1==31)
 		{
+		setTimeout(function(){
 		viewer.dataSources.removeAll();
 		viewer.render();
 		viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
 		viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 		viewer.clockViewModel.multiplier = 4000;
+		},500 );  
 		}
 		});
-		dataSource.loadingEvent.raiseEvent('1', '2');*/
+		dataSource.loadingEvent.raiseEvent('1', '2');
 		
     }).otherwise(function(error){
         //Display any errrors encountered while loading.
@@ -130,14 +127,6 @@ function updateStats(memuse) {
 	skyAtmosphere.hueShift += id/150;
 	viewer.clockViewModel.multiplier+= id*50;
 	province(path,population,id);
-	if(id == 31)
-	{
-	viewer.dataSources.removeAll();
-	viewer.render();
-	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
-	viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-	viewer.clockViewModel.multiplier = 4000;
-	}
 }
 
 var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
