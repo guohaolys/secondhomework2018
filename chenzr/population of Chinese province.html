@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Load GeoJSON or TopoJSON data and apply custom styling.">
+    <meta name="cesium-sandcastle-labels" content="Showcases, Tutorials, DataSources">
+    <title>Cesium Demo</title>
+    <script type="text/javascript" src="Cesium/Apps/Sandcastle/Sandcastle-header.js"></script>
+    <script type="text/javascript" src="Cesium/ThirdParty/requirejs-2.1.20/require.js"></script>
+    <script type="text/javascript">
+    require.config({
+        baseUrl : 'Cesium/Source',
+        waitSeconds : 60
+    });
+    </script>
+</head>
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html">
+<style>
+    @import url(Cesium/Apps/Sandcastle/templates/bucket.css);
+</style>
+<div id="cesiumContainer" class="fullSize"></div>
+<div id="loadingOverlay"><h1>Loading...</h1></div>
+<div id="toolbar"></div>
+<script id="cesium_sandcastle_script">
+function startup(Cesium) {
+    'use strict';
+
+//地球自转
+var clock = new Cesium.Clock({
+   startTime : Cesium.JulianDate.fromIso8601("2018-04-24"),
+   currentTime : Cesium.JulianDate.fromIso8601("2018-04-24"),
+   stopTime : Cesium.JulianDate.fromIso8601("2018-04-25"),
+   clockRange : Cesium.ClockRange.LOOP_STOP, // loop when we hit the end time
+   clockStep : Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER,
+   multiplier : 4000, // how much time to advance each tick
+   shouldAnimate : true // Animation on by default
+});
+
+//Sandcastle_Begin
+var viewer = new Cesium.Viewer('cesiumContainer', {
+    sceneModePicker:false,
+	 clockViewModel : new Cesium.ClockViewModel(clock)
+});
+var scene = viewer.scene;
+var skyAtmosphere = scene.skyAtmosphere;
+viewer.scene.globe.enableLighting = true;
+
+// 大气颜色
+var viewModel = {
+    hueShift: 0.02,
+    saturationShift: 0.0,
+    brightnessShift: 0.0
+};
+// Convert the viewModel members into knockout observables.
+Cesium.knockout.track(viewModel);  //监控：自动更新
+
+//清除图形
+Sandcastle.addToolbarButton('Clear', function() {
+	viewer.dataSources.removeAll();
+	viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(104.4, 28.7), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+});
+
+viewer.dataSources.removeAll();
+
+//把相机视角切换到中国上空
+viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(104.4, 28.7), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+
+//province函数：利用json文件，根据各省人口数量（决定高低）绘制立体多边形
+function province(path1,population1,id1) {
+    //Seed the random number generator for repeatable results.
+    Cesium.Math.setRandomNumberSeed(4);
+	path1+='.json';  //连接字符串形成正确路径
+
+    var promise = Cesium.GeoJsonDataSource.load(path1);
+    promise.then(function(dataSource) {
+        viewer.dataSources.add(dataSource);
+
+        //Get the array of entities
+        var entities = dataSource.entities.values;
+
+		var color = Cesium.Color.fromRandom({
+                    alpha : 1.0,
+					red: id1/32,
+					blue: id1/38
+                });
+        for (var i = 0; i < entities.length; i++) {
+            var entity = entities[i];
+
+            //设置颜色
+            entity.polygon.material = color;
+            //设置轮廓线
+            entity.polygon.outline = true;
+            //高度通过人口数据设置，人口过大，除以50
+            entity.polygon.extrudedHeight = population1 / 50.0;
+        }
+		viewer.render();
+		
+		dataSource.loadingEvent.addEventListener(function() {
+		if(id1==31)
+		{
+		setTimeout(function(){
+		viewer.dataSources.removeAll();
+		viewer.render();
+		viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(116.3, 39.9), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+		viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+		viewer.clockViewModel.multiplier = 4000;
+		},500 );  
+		}
+		});
+		dataSource.loadingEvent.raiseEvent('1', '2');
+		
+    }).otherwise(function(error){
+        //Display any errrors encountered while loading.
+        window.alert(error);
+    });
+}
+
+function updateStats(memuse) {
+	var path = "province/";
+	path+=memuse.province.name1;; 
+	var population = memuse.province.population;
+	var id = memuse.province.id;
+	skyAtmosphere.hueShift += id/150;
+	viewer.clockViewModel.multiplier+= id*50;
+	province(path,population,id);
+}
+
+var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
+ws.onopen = function()
+{
+    alert("open WebSocket on server");
+};
+ws.onmessage = function (evt)
+{
+    updateStats(JSON.parse(evt.data));
+};
+
+ws.onclose = function()
+{
+	// websocket is closed.
+	alert("Connection is closed...");
+};
+
+
+//Sandcastle_End
+    Sandcastle.finishedLoading();
+}
+if (typeof Cesium !== "undefined") {
+    startup(Cesium);
+} else if (typeof require === "function") {
+    require(["Cesium"], startup);
+}
+</script>
+</body>
+</html>
