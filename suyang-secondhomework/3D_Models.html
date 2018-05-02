@@ -164,14 +164,12 @@ function updateStats(memuse) {
     if(i==0)
     {
 	   computeCirclularFlight(memuse);
-	   alert("This is 0");
-	  //console.log("This" + memuse + " to the wire...");
 	}
 	i++;
 }
 var ws = new WebSocket('ws://' + '127.0.0.1' + ':3000');
 ws.onopen = function(){
-    alert("open WebSocket on server+1");
+    alert("open WebSocket on server");
 };
 
 ws.onmessage = function (evt){
