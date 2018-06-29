@@ -1,20 +1,33 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <style>
-      body {
-        font-family: Tahoma, Geneva, sans-serif;
-      }
-      div {
-        display: inline;
-      }
-    </style>
+    <meta charset="utf-8"></meta>
+    <title>sin函数图像</title>
+    <style type="text/css">
+        #main{
+		     width: 600px;
+             height: 200px;
+             border: 1px solid #000;
+             margin: 200px auto;
+             position: relative;
+        }
+        #horizon{
+             position: absolute;
+             left: 0px;
+             top: 0px;
+        }
+        #horizon>div{
+             position: absolute;
+        }
+		body {
+			 font-family: Tahoma, Geneva, sans-serif;
+		}
+		div {
+			 display: inline;
+		}  
+	</style>
     <script>
-    function updateStats(memuse) {
-      document.getElementById('rss').innerHTML += memuse["header"]["seq"];
-      document.getElementById('heapTotal').innerHTML += memuse["header"]["frame_id"];
-    }
-      var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
+ 	var ws = new WebSocket('ws://' + '127.0.0.1' + ':3030');
       ws.onopen = function()
               {
                  alert("open WebSocket on server");
@@ -30,11 +43,31 @@
                  // websocket is closed.
                  alert("Connection is closed...");
               };
+
+	//创建描点的div
+	function createDiv(w,h,x,y,color) { 
+	     return "<div style='width:" + w + "px;height:" + h + "px;left:" + x +"px;top:" + y + "px;background:" + color + "'></div>"
+    }
+	
+	function updateStats(Sin) {
+	     var num = 0;
+		 //生成横坐标线
+		 for (var i = 0, line = []; i < Sin["width"] + 1; i++) {
+             line[i] = this.createDiv(1,1,i,Sin["height"],"#000");
+         }
+         document.getElementById('horizon').innerHTML += line.join("");
+		 //生成图像		 
+		 for (var i = 0, arr = [],line = []; i < Sin["width"]; i++) {
+		     arr[i] = this.createDiv(Sin["w"],Sin["h"],i += Sin["wave"],parseInt(Sin["height"] + Math.sin(num += .1) * Sin["height"]),Sin["color"]  );
+		 }
+		 document.getElementById('horizon').innerHTML += arr.join("");
+    }
     </script>
   </head>
+  
   <body>
-    <strong>Server Stats</strong><br>
-    header: <div id='rss'></div><br>
-    tracks: <div id='heapTotal'></div><br>
+  <div id="main">
+    <div id="horizon"></div>
+  </div>
   </body>
 </html>
