@@ -2,11 +2,18 @@ const dgram = require('dgram');
 
 setInterval(broadcastNew, 1000);
 function broadcastNew() {
-  var obj = {"header":{"seq":71251,"stamp":{"sec":1415305737,"nsec":110138944},"frame_id":"world"},"tracks": [{"id":387,"x":-0.89131,"y":2.41851,"height":1.55837,"age":29.471,"confidence":.0500193}]};
-  //replace obj with your own sensor data
-  /*such as some mathematical curve*/
-  var myJSON = JSON.stringify(obj);
+	var Sin ={
+		"w":2,         //描点宽
+		"h":2,         //描点高
+		"width":900,   //画图区域宽
+		"height":200,  //画图区域高
+		"wave":2,      //波长
+		"color":"red" //颜色
+	}
+
+  var myJSON = JSON.stringify(Sin); 
   const message = myJSON;
+  
   const client = dgram.createSocket('udp4');
   client.send(message, 21234, 'localhost', (err) => {
     client.close();
